@@ -53,6 +53,10 @@ public abstract class LazySeq<E> extends AbstractList<E> {
 		return of(Arrays.asList(elements).iterator());
 	}
 
+	public static <E> LazySeq<E> of(Stream<E> elements) {
+		return of(elements.iterator());
+	}
+
 	public static <E> LazySeq<E> of(Iterable<E> elements) {
 		return of(elements.iterator());
 	}
