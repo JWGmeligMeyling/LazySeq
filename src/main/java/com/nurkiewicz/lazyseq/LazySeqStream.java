@@ -14,6 +14,7 @@ import java.util.stream.*;
 class LazySeqStream<E> implements Stream<E> {
 
 	private final LazySeq<E> underlying;
+	private Runnable closeAction;
 
 	LazySeqStream(LazySeq<E> underlying) {
 		this.underlying = underlying;
@@ -240,11 +241,34 @@ class LazySeqStream<E> implements Stream<E> {
 
 	@Override
 	public Stream<E> onClose(Runnable closeHandler) {
-		throw new UnsupportedOperationException("Not yet implemented: onClose");
+		Runnable previousCloseAction = closeAction;
+		closeAction = previousCloseAction == null ? closeHandler : () -> {
+			try {
+				previousCloseAction.run();
+			}
+			catch (Throwable e1) {
+				try {
+					closeHandler.run();
+				}
+				catch (Throwable e2) {
+					try {
+						e1.addSuppressed(e2);
+					} catch (Throwable ignore) {}
+				}
+				throw e1;
+			}
+			closeHandler.run();
+		};
+		return this;
 	}
 
 	@Override
 	public void close() {
-		throw new UnsupportedOperationException("Not yet implemented: close");
+		if (closeAction != null) {
+			Runnable action = closeAction;
+			closeAction = null;
+			action.run();
+		}
 	}
+
 }
